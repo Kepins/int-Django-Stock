@@ -1,0 +1,4 @@
+# Enviroment variables
+.env
+# pycache
+*.pyc
