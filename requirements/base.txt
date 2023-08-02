@@ -1,0 +1,6 @@
+dj-database-url==2.0.0
+Django==4.2.4
+djangorestframework==3.14.0
+psycopg2-binary==2.9.6
+python-decouple==3.8
+pytz==2023.3
