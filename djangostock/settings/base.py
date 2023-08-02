@@ -41,8 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "djangostock.apps.accounts",
-    "djangostock.apps.core",
+    "djangostock.application",
 ]
 
 # Default primary key field type
