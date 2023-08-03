@@ -16,7 +16,6 @@ class User(AbstractBaseUser, ModelWithTimestamps):
     first_name = models.fields.CharField(max_length=40)
     last_name = models.fields.CharField(max_length=40)
     email = models.fields.EmailField(unique=True)
-    password = models.fields.CharField(max_length=128)
     is_admin = models.fields.BooleanField(default=False)
     is_active = models.fields.BooleanField(default=True)
 
