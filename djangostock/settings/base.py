@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "djangostock.application",
+    "rest_framework",
 ]
 
 # Default primary key field type
