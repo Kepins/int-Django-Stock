@@ -19,6 +19,16 @@ class User(AbstractBaseUser, ModelWithTimestamps):
     is_admin = models.fields.BooleanField(default=False)
     is_active = models.fields.BooleanField(default=True)
 
+    @property
+    def is_staff(self):
+        return self.is_admin
+
+    def has_perm(self, perm, obj=None):
+        return self.is_admin
+
+    def has_module_perms(self, app_label):
+        return self.is_admin
+
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"
     # REQUIRED_FIELDS must contain all required fields on your user model,
