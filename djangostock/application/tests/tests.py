@@ -192,6 +192,21 @@ class UserListNotAuthenticatedTest(TestCase):
         self.assertEquals(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
+class UserListNotAdminTest(TestCase):
+    def setUp(self):
+        setup_test_environment()
+        self.user = UserFactory(is_admin=False)
+        self.user.save()
+        self.bearer_header = {"Authorization": f"Bearer {AccessToken.for_user(self.user)}"}
+
+    def test_get(self):
+        resp = self.client.get(
+            "/users/",
+            headers=self.bearer_header,
+        )
+        self.assertEquals(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+
 class UserDetailNotAuthenticatedTest(TestCase):
     wrong_bearer_header = {"Authorization": f"Bearer 1234"}
 
