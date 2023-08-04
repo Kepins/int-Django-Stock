@@ -19,9 +19,8 @@ class UserListTest(TestCase):
 
     def test_get(self):
         resp = self.client.get("/users/")
-        data = json.loads(str(resp.content, encoding="UTF-8"))
         self.assertEquals(resp.status_code, status.HTTP_200_OK)
-        self.assertEquals(len(data), self.NUM_USERS)
+        self.assertEquals(len(resp.data), self.NUM_USERS)
 
     def test_post(self):
         resp = self.client.post(
@@ -36,14 +35,13 @@ class UserListTest(TestCase):
             ),
             content_type="application/json",
         )
-        data = json.loads(str(resp.content, encoding="UTF-8"))
         self.assertEquals(resp.status_code, 201)
-        self.assertEquals(data["first_name"], "Maciej")
-        self.assertEquals(data["last_name"], "Tester")
-        self.assertEquals(data["email"], "Tester@example.com")
-        self.assertEquals(data["is_admin"], False)
+        self.assertEquals(resp.data["first_name"], "Maciej")
+        self.assertEquals(resp.data["last_name"], "Tester")
+        self.assertEquals(resp.data["email"], "Tester@example.com")
+        self.assertEquals(resp.data["is_admin"], False)
         self.assertIsNotNone(authenticate(username="Tester@example.com", password="Password123"))
-        user = User.objects.get(pk=data["id"])
+        user = User.objects.get(pk=resp.data["id"])
         self.assertEquals(user.first_name, "Maciej")
         self.assertEquals(user.last_name, "Tester")
         self.assertEquals(user.is_active, True)
@@ -58,9 +56,8 @@ class UserDetailTest(TestCase):
 
     def test_get(self):
         resp = self.client.get(f"/users/{self.user.id}/")
-        data = json.loads(str(resp.content, encoding="UTF-8"))
         self.assertEquals(resp.status_code, status.HTTP_200_OK)
-        self.assertEquals(data["id"], self.user.id)
+        self.assertEquals(resp.data["id"], self.user.id)
 
     def test_post(self):
         resp = self.client.post(
@@ -75,7 +72,6 @@ class UserDetailTest(TestCase):
             ),
             content_type="application/json",
         )
-        # data = json.loads(str(resp.content, encoding="UTF-8"))
         self.assertEquals(resp.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_put(self):
@@ -91,7 +87,6 @@ class UserDetailTest(TestCase):
             ),
             content_type="application/json",
         )
-        # data = json.loads(str(resp.content, encoding="UTF-8"))
         self.assertEquals(resp.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_patch(self):
@@ -105,9 +100,8 @@ class UserDetailTest(TestCase):
             ),
             content_type="application/json",
         )
-        data = json.loads(str(resp.content, encoding="UTF-8"))
-        self.assertEquals(data["first_name"], "Maciejo")
-        self.assertEquals(data["last_name"], "Testero")
+        self.assertEquals(resp.data["first_name"], "Maciejo")
+        self.assertEquals(resp.data["last_name"], "Testero")
         self.assertEquals(resp.status_code, status.HTTP_200_OK)
         user = User.objects.get(pk=self.user.id)
         self.assertEquals(user.first_name, "Maciejo")
@@ -123,8 +117,7 @@ class UserDetailTest(TestCase):
             ),
             content_type="application/json",
         )
-        data = json.loads(str(resp.content, encoding="UTF-8"))
-        self.assertEquals(data["first_name"], "Maciejo")
+        self.assertEquals(resp.data["first_name"], "Maciejo")
         self.assertEquals(resp.status_code, status.HTTP_200_OK)
         user = User.objects.get(pk=self.user.id)
         self.assertEquals(user.first_name, "Maciejo")
