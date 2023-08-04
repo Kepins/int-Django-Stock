@@ -122,6 +122,26 @@ class UserDetailTest(TestCase):
         user = User.objects.get(pk=self.user.id)
         self.assertEquals(user.first_name, "Maciejo")
 
+    def test_patch3(self):
+        resp = self.client.patch(
+            f"/users/{self.user.id}/",
+            json.dumps(
+                {
+                    "first_name": "Maciejo",
+                    "last_name": "Testero",
+                    "password": "new_passwd",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEquals(resp.data["first_name"], "Maciejo")
+        self.assertEquals(resp.data["last_name"], "Testero")
+        self.assertEquals(resp.status_code, status.HTTP_200_OK)
+        self.assertIsNotNone(authenticate(username=self.user.email, password="new_passwd"))
+        user = User.objects.get(pk=self.user.id)
+        self.assertEquals(user.first_name, "Maciejo")
+        self.assertEquals(user.last_name, "Testero")
+
     def test_delete(self):
         resp = self.client.delete(f"/users/{self.user.id}/")
         self.assertEquals(resp.status_code, status.HTTP_204_NO_CONTENT)
