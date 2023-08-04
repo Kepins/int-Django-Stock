@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import User
-from .serializers import UserSerializer, UserSerializerPatch
+from .serializers import UserSerializer
 
 
 class UserList(APIView):
@@ -43,7 +43,7 @@ class UserDetail(APIView):
 
     def patch(self, request, pk, format=None):
         user = self.get_object(pk)
-        serializer = UserSerializerPatch(user, data=request.data)
+        serializer = UserSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
