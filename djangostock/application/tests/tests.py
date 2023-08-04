@@ -3,6 +3,7 @@ import json
 from django.contrib.auth import authenticate
 from django.test import TestCase
 from rest_framework import status
+from rest_framework_simplejwt.tokens import AccessToken
 
 from .factories import UserFactory, setup_test_environment
 
@@ -14,11 +15,18 @@ class UserListTest(TestCase):
 
     def setUp(self):
         setup_test_environment()
-        for _ in range(self.NUM_USERS):
+        self.admin = UserFactory(is_admin=True)
+        self.admin.set_password("adminpasswd")
+        self.admin.save()
+        self.bearer_header = {"Authorization": f"Bearer {AccessToken.for_user(self.admin)}"}
+        for _ in range(self.NUM_USERS - 1):
             UserFactory().save()
 
     def test_get(self):
-        resp = self.client.get("/users/")
+        resp = self.client.get(
+            "/users/",
+            headers=self.bearer_header,
+        )
         self.assertEquals(resp.status_code, status.HTTP_200_OK)
         self.assertEquals(len(resp.data), self.NUM_USERS)
 
@@ -53,9 +61,13 @@ class UserDetailTest(TestCase):
         setup_test_environment()
         self.user = UserFactory()
         self.user.save()
+        self.bearer_header = {"Authorization": f"Bearer {AccessToken.for_user(self.user)}"}
 
     def test_get(self):
-        resp = self.client.get(f"/users/{self.user.id}/")
+        resp = self.client.get(
+            f"/users/{self.user.id}/",
+            headers=self.bearer_header,
+        )
         self.assertEquals(resp.status_code, status.HTTP_200_OK)
         self.assertEquals(resp.data["id"], self.user.id)
 
@@ -71,6 +83,7 @@ class UserDetailTest(TestCase):
                 }
             ),
             content_type="application/json",
+            headers=self.bearer_header,
         )
         self.assertEquals(resp.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -86,6 +99,7 @@ class UserDetailTest(TestCase):
                 }
             ),
             content_type="application/json",
+            headers=self.bearer_header,
         )
         self.assertEquals(resp.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
@@ -99,6 +113,7 @@ class UserDetailTest(TestCase):
                 }
             ),
             content_type="application/json",
+            headers=self.bearer_header,
         )
         self.assertEquals(resp.data["first_name"], "Maciejo")
         self.assertEquals(resp.data["last_name"], "Testero")
@@ -116,6 +131,7 @@ class UserDetailTest(TestCase):
                 }
             ),
             content_type="application/json",
+            headers=self.bearer_header,
         )
         self.assertEquals(resp.data["first_name"], "Maciejo")
         self.assertEquals(resp.status_code, status.HTTP_200_OK)
@@ -133,6 +149,7 @@ class UserDetailTest(TestCase):
                 }
             ),
             content_type="application/json",
+            headers=self.bearer_header,
         )
         self.assertEquals(resp.data["first_name"], "Maciejo")
         self.assertEquals(resp.data["last_name"], "Testero")
@@ -143,7 +160,10 @@ class UserDetailTest(TestCase):
         self.assertEquals(user.last_name, "Testero")
 
     def test_delete(self):
-        resp = self.client.delete(f"/users/{self.user.id}/")
+        resp = self.client.delete(
+            f"/users/{self.user.id}/",
+            headers=self.bearer_header,
+        )
         self.assertEquals(resp.status_code, status.HTTP_204_NO_CONTENT)
         with self.assertRaises(User.DoesNotExist):
             User.objects.get(pk=self.user.id)
