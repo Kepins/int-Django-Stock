@@ -167,3 +167,89 @@ class UserDetailTest(TestCase):
         self.assertEquals(resp.status_code, status.HTTP_204_NO_CONTENT)
         with self.assertRaises(User.DoesNotExist):
             User.objects.get(pk=self.user.id)
+
+
+class UserListNotAuthenticatedTest(TestCase):
+    NUM_USERS = 10
+    wrong_bearer_header = {"Authorization": f"Bearer 1234"}
+
+    def setUp(self):
+        setup_test_environment()
+        for _ in range(self.NUM_USERS):
+            UserFactory().save()
+
+    def test_get_no_header(self):
+        resp = self.client.get(
+            "/users/",
+        )
+        self.assertEquals(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_get_wrong_header(self):
+        resp = self.client.get(
+            "/users/",
+            headers=self.wrong_bearer_header,
+        )
+        self.assertEquals(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class UserDetailNotAuthenticatedTest(TestCase):
+    wrong_bearer_header = {"Authorization": f"Bearer 1234"}
+
+    def setUp(self):
+        setup_test_environment()
+        self.user = UserFactory()
+        self.user.save()
+
+    def test_get_no_header(self):
+        resp = self.client.get(
+            f"/users/{self.user.id}/",
+        )
+        self.assertEquals(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_get_wrong_header(self):
+        resp = self.client.get(
+            f"/users/{self.user.id}/",
+            headers=self.wrong_bearer_header,
+        )
+        self.assertEquals(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_patch_no_header(self):
+        resp = self.client.patch(
+            f"/users/{self.user.id}/",
+            json.dumps(
+                {
+                    "first_name": "Maciejo",
+                    "last_name": "Testero",
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEquals(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_patch_wrong_header(self):
+        resp = self.client.patch(
+            f"/users/{self.user.id}/",
+            json.dumps(
+                {
+                    "first_name": "Maciejo",
+                    "last_name": "Testero",
+                }
+            ),
+            content_type="application/json",
+            headers=self.wrong_bearer_header,
+        )
+        self.assertEquals(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_delete_no_header(self):
+        resp = self.client.delete(
+            f"/users/{self.user.id}/",
+        )
+        self.assertEquals(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_delete_wrong_header(self):
+        resp = self.client.delete(
+            f"/users/{self.user.id}/",
+            headers=self.wrong_bearer_header,
+        )
+        self.assertEquals(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
