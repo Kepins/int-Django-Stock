@@ -21,6 +21,6 @@ class IsHimself(BasePermission):
     """
 
     def has_object_permission(self, request, view, obj):
-        # Instance must have an attribute named `owner`.
+        # Instance must have an attribute named `id`.
 
         return obj.id == request.user.id
