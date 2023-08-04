@@ -253,3 +253,40 @@ class UserDetailNotAuthenticatedTest(TestCase):
         )
         self.assertEquals(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
+
+class UserDetailForbiddenTest(TestCase):
+    def setUp(self):
+        setup_test_environment()
+        self.user_accessed = UserFactory()
+        self.user_accessed.save()
+        self.user_accessing = UserFactory()
+        self.user_accessing.save()
+        self.bearer_header = {"Authorization": f"Bearer {AccessToken.for_user(self.user_accessing)}"}
+
+    def test_get(self):
+        resp = self.client.get(
+            f"/users/{self.user_accessed.id}/",
+            headers=self.bearer_header,
+        )
+        self.assertEquals(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_patch(self):
+        resp = self.client.patch(
+            f"/users/{self.user_accessed.id}/",
+            json.dumps(
+                {
+                    "first_name": "Maciejo",
+                    "last_name": "Testero",
+                }
+            ),
+            content_type="application/json",
+            headers=self.bearer_header,
+        )
+        self.assertEquals(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete(self):
+        resp = self.client.delete(
+            f"/users/{self.user_accessed.id}/",
+            headers=self.bearer_header,
+        )
+        self.assertEquals(resp.status_code, status.HTTP_403_FORBIDDEN)
