@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import dj_database_url
 from decouple import Csv, config
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "djangostock.application",
     "rest_framework",
+    "rest_framework_simplejwt",
 ]
 
 # Default primary key field type
@@ -90,7 +92,25 @@ TEMPLATES = [
         },
     },
 ]
+# ==============================================================================
+# REST SETTINGS
+# ==============================================================================
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
 
+
+# ==============================================================================
+# SIMPLE JWT SETTINGS
+# ==============================================================================
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "SIGNING_KEY": SECRET_KEY,
+}
 
 # ==============================================================================
 # DATABASES SETTINGS
