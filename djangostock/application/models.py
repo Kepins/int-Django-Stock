@@ -39,3 +39,34 @@ class User(AbstractBaseUser, ModelWithTimestamps):
 
     def __str__(self):
         return self.email
+
+
+class Currency(models.Model):
+    name = models.fields.CharField(max_length=40)
+
+
+class Country(models.Model):
+    name = models.fields.CharField(max_length=100)
+
+
+class Stock(models.Model):
+    class TypeOfStock(models.TextChoices):
+        COMMON_STOCK = "Common Stock"
+
+    name = models.fields.CharField(max_length=250)
+    symbol = models.fields.CharField(max_length=40)
+    exchange_name = models.fields.CharField(max_length=40)
+    type_of_stock = models.fields.CharField(max_length=100, choices=TypeOfStock.choices)
+    last_update_date = models.DateTimeField()
+    currency = models.ForeignKey(Currency, on_delete=models.PROTECT)
+    country = models.ForeignKey(Country, on_delete=models.PROTECT)
+
+
+class StockTimeSeries(models.Model):
+    stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
+    open = models.fields.FloatField()
+    close = models.fields.FloatField()
+    high = models.fields.FloatField()
+    low = models.fields.FloatField()
+    volume = models.fields.IntegerField()
+    recorded_date = models.DateTimeField()
