@@ -42,11 +42,11 @@ class User(AbstractBaseUser, ModelWithTimestamps):
 
 
 class Currency(models.Model):
-    name = models.fields.CharField(max_length=40)
+    name = models.fields.CharField(max_length=40, unique=True)
 
 
 class Country(models.Model):
-    name = models.fields.CharField(max_length=100)
+    name = models.fields.CharField(max_length=100, unique=True)
 
 
 class Stock(models.Model):
@@ -54,7 +54,7 @@ class Stock(models.Model):
         COMMON_STOCK = "Common Stock"
 
     name = models.fields.CharField(max_length=250)
-    symbol = models.fields.CharField(max_length=40)
+    symbol = models.fields.CharField(max_length=40, unique=True)
     exchange_name = models.fields.CharField(max_length=40)
     type_of_stock = models.fields.CharField(max_length=100, choices=TypeOfStock.choices)
     last_update_date = models.DateTimeField()
