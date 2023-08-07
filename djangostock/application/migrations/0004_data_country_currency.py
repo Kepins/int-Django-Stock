@@ -2,21 +2,29 @@
 
 from django.db import migrations
 
+from ..serializers import CurrencySerializer, CountrySerializer
+
+currencies = [
+    {"name": "USD"},
+]
+
+countries = [
+    {"name": "United States"},
+]
+
 
 def add_currencies(apps, schema_editor):
-    # We can't import the Person model directly as it may be a newer
-    # version than this migration expects. We use the historical version.
-    CurrencySerializer = apps.get_model("application", "CurrencySerializer")
-
-    CurrencySerializer(name="USD").create()
+    for currency in currencies:
+        serializer = CurrencySerializer(data=currency)
+        if serializer.is_valid():
+            serializer.save()
 
 
 def add_countries(apps, schema_editor):
-    # We can't import the Person model directly as it may be a newer
-    # version than this migration expects. We use the historical version.
-    CountrySerializer = apps.get_model("application", "CountrySerializer")
-
-    CountrySerializer(name="United States").create()
+    for country in countries:
+        serializer = CountrySerializer(data=country)
+        if serializer.is_valid():
+            serializer.save()
 
 
 class Migration(migrations.Migration):
