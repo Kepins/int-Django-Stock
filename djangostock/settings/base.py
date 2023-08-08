@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "celery",
+    "django_celery_beat",
 ]
 
 # Default primary key field type
