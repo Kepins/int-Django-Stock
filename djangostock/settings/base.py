@@ -16,7 +16,7 @@ from decouple import Csv, config
 from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # ==============================================================================
 # CORE SETTINGS
@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "djangostock.application",
+    "djangostock.application.application.ApplicationConfig",
     "rest_framework",
     "rest_framework_simplejwt",
 ]

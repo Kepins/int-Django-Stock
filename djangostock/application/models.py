@@ -57,7 +57,7 @@ class Stock(models.Model):
     symbol = models.fields.CharField(max_length=40, unique=True)
     exchange_name = models.fields.CharField(max_length=40)
     type_of_stock = models.fields.CharField(max_length=100, choices=TypeOfStock.choices)
-    last_update_date = models.DateTimeField()
+    last_update_date = models.DateTimeField(null=True)
     currency = models.ForeignKey(Currency, on_delete=models.PROTECT)
     country = models.ForeignKey(Country, on_delete=models.PROTECT)
 
