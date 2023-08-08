@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "djangostock.application.application.ApplicationConfig",
     "rest_framework",
     "rest_framework_simplejwt",
+    "celery",
 ]
 
 # Default primary key field type
@@ -146,6 +147,14 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# ==============================================================================
+# CELERY SETTINGS
+# ==============================================================================
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default="redis://127.0.0.1:6379")
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="pyamqp://127.0.0.1:5672")
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
 
 # ==============================================================================
 # I18N AND L10N SETTINGS
