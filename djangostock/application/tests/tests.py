@@ -1,13 +1,16 @@
+import datetime
 import json
+from unittest import mock
 
 from django.contrib.auth import authenticate
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework import status
 from rest_framework_simplejwt.tokens import AccessToken
 
-from .factories import UserFactory, setup_test_environment
+from .factories import UserFactory, setup_test_environment, StockFactory, StockTimeSeriesFactory
 
-from ..models import User
+from ..models import User, Stock, StockTimeSeries
+from ..tasks import update_time_series
 
 
 class UserListTest(TestCase):
@@ -305,3 +308,141 @@ class UserDetailForbiddenTest(TestCase):
             headers=self.bearer_header,
         )
         self.assertEquals(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class TaskUpdateTimeSeriesValid(TestCase):
+    def setUp(self):
+        self.stock = StockFactory()
+        self.stock.save()
+        self.response_mock = mock.Mock()
+        self.response_mock.json = lambda: {
+            "meta": {
+                "symbol": self.stock.symbol,
+                "interval": "1day",
+                "currency": self.stock.currency,
+                "exchange_timezone": "America/New_York",
+                "exchange": self.stock.exchange_name,
+                "mic_code": "XNCM",
+                "type": self.stock.type_of_stock,
+            },
+            "values": [
+                {
+                    "datetime": "2023-08-08",
+                    "open": "2.36000",
+                    "high": "2.42000",
+                    "low": "2.18000",
+                    "close": "2.18000",
+                    "volume": "6200",
+                },
+                {
+                    "datetime": "2023-08-07",
+                    "open": "2.45000",
+                    "high": "2.65000",
+                    "low": "2.31000",
+                    "close": "2.31000",
+                    "volume": "18500",
+                },
+                {
+                    "datetime": "2023-08-04",
+                    "open": "2.51000",
+                    "high": "2.86000",
+                    "low": "2.50000",
+                    "close": "2.51000",
+                    "volume": "36700",
+                },
+            ],
+            "status": "ok",
+        }
+        self.response_mock.status_code = 200
+
+    @mock.patch("requests.get")
+    def test_update_first(self, mock_get):
+        self.stock.last_update_date = None
+        self.stock.save()
+
+        mock_get.return_value = self.response_mock
+        update_time_series.delay(self.stock.symbol)
+
+        stock_time_series = StockTimeSeries.objects.all()
+        self.assertEquals(len(stock_time_series), 3)
+        self.assertEquals(stock_time_series[0].recorded_date, datetime.date(year=2023, month=8, day=8))
+        self.assertEquals(stock_time_series[0].stock, self.stock)
+        self.assertAlmostEquals(stock_time_series[0].open, 2.36)
+        self.assertAlmostEquals(stock_time_series[0].close, 2.18)
+        self.assertAlmostEquals(stock_time_series[0].low, 2.18)
+        self.assertAlmostEquals(stock_time_series[0].high, 2.42)
+        self.assertEquals(stock_time_series[0].volume, 6200)
+        self.assertEquals(stock_time_series[1].recorded_date, datetime.date(year=2023, month=8, day=7))
+        self.assertEquals(stock_time_series[2].recorded_date, datetime.date(year=2023, month=8, day=4))
+
+    @mock.patch("requests.get")
+    def test_update_already_up_to_date(self, mock_get):
+        self.stock.last_update_date = datetime.date(year=2023, month=8, day=8)
+        self.stock.save()
+
+        sts = StockTimeSeriesFactory()
+        sts.stock = self.stock
+        sts.recorded_date = datetime.date(year=2023, month=8, day=8)
+        sts.save()
+
+        mock_get.return_value = self.response_mock
+        update_time_series.delay(self.stock.symbol)
+
+        stock_time_series = StockTimeSeries.objects.all()
+        self.assertEquals(len(stock_time_series), 1)
+        self.assertEquals(stock_time_series.first(), sts)
+
+    @mock.patch("requests.get")
+    def test_update_one_new(self, mock_get):
+        self.stock.last_update_date = datetime.date(year=2023, month=8, day=7)
+        self.stock.save()
+
+        sts = StockTimeSeriesFactory()
+        sts.stock = self.stock
+        sts.recorded_date = datetime.date(year=2023, month=8, day=7)
+        sts.save()
+
+        mock_get.return_value = self.response_mock
+        update_time_series.delay(self.stock.symbol)
+
+        stock_time_series = StockTimeSeries.objects.all()
+        self.assertEquals(len(stock_time_series), 2)
+        self.assertEquals(stock_time_series[1].recorded_date, datetime.date(year=2023, month=8, day=8))
+        self.assertEquals(stock_time_series[1].stock, self.stock)
+        self.assertAlmostEquals(stock_time_series[1].open, 2.36)
+        self.assertAlmostEquals(stock_time_series[1].close, 2.18)
+        self.assertAlmostEquals(stock_time_series[1].low, 2.18)
+        self.assertAlmostEquals(stock_time_series[1].high, 2.42)
+        self.assertEquals(stock_time_series[1].volume, 6200)
+        self.assertEquals(stock_time_series[0], sts)
+
+    @mock.patch("requests.get")
+    def test_update_more_new(self, mock_get):
+        self.stock.last_update_date = datetime.date(year=2023, month=8, day=4)
+        self.stock.save()
+
+        sts = StockTimeSeriesFactory()
+        sts.stock = self.stock
+        sts.recorded_date = datetime.date(year=2023, month=8, day=4)
+        sts.save()
+
+        mock_get.return_value = self.response_mock
+        update_time_series.delay(self.stock.symbol)
+
+        stock_time_series = StockTimeSeries.objects.all()
+        self.assertEquals(len(stock_time_series), 3)
+        sts_08_08 = StockTimeSeries.objects.get(recorded_date=datetime.date(year=2023, month=8, day=8))
+        self.assertEquals(sts_08_08.stock, self.stock)
+        self.assertAlmostEquals(sts_08_08.open, 2.36)
+        self.assertAlmostEquals(sts_08_08.close, 2.18)
+        self.assertAlmostEquals(sts_08_08.low, 2.18)
+        self.assertAlmostEquals(sts_08_08.high, 2.42)
+        self.assertEquals(sts_08_08.volume, 6200)
+        sts_08_07 = StockTimeSeries.objects.get(recorded_date=datetime.date(year=2023, month=8, day=7))
+        self.assertEquals(sts_08_07.stock, self.stock)
+        self.assertAlmostEquals(sts_08_07.open, 2.45)
+        self.assertAlmostEquals(sts_08_07.close, 2.31)
+        self.assertAlmostEquals(sts_08_07.low, 2.31)
+        self.assertAlmostEquals(sts_08_07.high, 2.65)
+        self.assertEquals(sts_08_07.volume, 18500)
+        self.assertEquals(stock_time_series[0], sts)
