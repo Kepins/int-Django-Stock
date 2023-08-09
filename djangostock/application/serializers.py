@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import User
+from .models import User, Currency, Country, Stock
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -20,3 +20,41 @@ class UserSerializer(serializers.ModelSerializer):
             user.set_password(validated_data.get("password"))
         user.save()
         return user
+
+
+class CurrencySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Currency
+        fields = "__all__"
+
+
+class CountrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Country
+        fields = "__all__"
+
+
+class StockSerializer(serializers.ModelSerializer):
+    exchange = serializers.CharField(source="exchange_name")
+    type = serializers.CharField(source="type_of_stock")
+
+    currency = serializers.SlugRelatedField(
+        slug_field="name",
+        queryset=Currency.objects.all(),
+    )
+    country = serializers.SlugRelatedField(
+        slug_field="name",
+        queryset=Country.objects.all(),
+    )
+
+    class Meta:
+        model = Stock
+        fields = [
+            "name",
+            "symbol",
+            "last_update_date",
+            "exchange",
+            "type",
+            "currency",
+            "country",
+        ]
