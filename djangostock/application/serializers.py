@@ -34,32 +34,6 @@ class CountrySerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class StockSerializer(serializers.ModelSerializer):
-    exchange = serializers.CharField(source="exchange_name")
-    type = serializers.CharField(source="type_of_stock")
-
-    currency = serializers.SlugRelatedField(
-        slug_field="name",
-        queryset=Currency.objects.all(),
-    )
-    country = serializers.SlugRelatedField(
-        slug_field="name",
-        queryset=Country.objects.all(),
-    )
-
-    class Meta:
-        model = Stock
-        fields = [
-            "name",
-            "symbol",
-            "last_update_date",
-            "exchange",
-            "type",
-            "currency",
-            "country",
-        ]
-
-
 class StockTimeSeriesSerializer(serializers.ModelSerializer):
     datetime = serializers.DateField(source="recorded_date")
 
@@ -73,4 +47,33 @@ class StockTimeSeriesSerializer(serializers.ModelSerializer):
             "high",
             "low",
             "volume",
+        ]
+        extra_kwargs = {"stock": {"write_only": "true"}}
+
+
+class StockSerializer(serializers.ModelSerializer):
+    exchange = serializers.CharField(source="exchange_name")
+    type = serializers.CharField(source="type_of_stock")
+
+    currency = serializers.SlugRelatedField(
+        slug_field="name",
+        queryset=Currency.objects.all(),
+    )
+    country = serializers.SlugRelatedField(
+        slug_field="name",
+        queryset=Country.objects.all(),
+    )
+    latest_data = StockTimeSeriesSerializer(source="latest_time_series", read_only=True)
+
+    class Meta:
+        model = Stock
+        fields = [
+            "name",
+            "symbol",
+            "last_update_date",
+            "exchange",
+            "type",
+            "currency",
+            "country",
+            "latest_data",
         ]

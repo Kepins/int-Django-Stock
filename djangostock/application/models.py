@@ -61,9 +61,13 @@ class Stock(models.Model):
     currency = models.ForeignKey(Currency, on_delete=models.PROTECT)
     country = models.ForeignKey(Country, on_delete=models.PROTECT)
 
+    @property
+    def latest_time_series(self):
+        return self.series.latest("recorded_date")
+
 
 class StockTimeSeries(models.Model):
-    stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
+    stock = models.ForeignKey(Stock, related_name="series", on_delete=models.CASCADE)
     open = models.fields.FloatField()
     close = models.fields.FloatField()
     high = models.fields.FloatField()
