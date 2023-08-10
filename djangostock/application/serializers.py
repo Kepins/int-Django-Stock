@@ -61,7 +61,7 @@ class StockSerializer(serializers.ModelSerializer):
 
 
 class StockTimeSeriesSerializer(serializers.ModelSerializer):
-    datetime = serializers.CharField(source="recorded_date")
+    datetime = serializers.DateField(source="recorded_date")
 
     class Meta:
         model = StockTimeSeries
