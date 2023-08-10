@@ -67,11 +67,15 @@ class UserDetail(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class StockPricePagination(PageNumberPagination):
+    page_size = 20
+
+
 class StockPrices(ListAPIView):
     permission_classes = [IsAuthenticated]
-    pagination_class = PageNumberPagination
-    queryset = Stock.objects.all()
+    queryset = Stock.objects.filter(last_update_date__isnull=False)
     serializer_class = StockSerializer
+    pagination_class = StockPricePagination
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -92,4 +96,10 @@ class StockPrices(ListAPIView):
             "-latest_volume"
         )
 
-        return Response(self.get_serializer(stocks_ordered_by_latest_volume, many=True).data)
+        page = self.paginate_queryset(stocks_ordered_by_latest_volume)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(stocks_ordered_by_latest_volume, many=True)
+        return Response(serializer.data)
