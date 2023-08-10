@@ -1,8 +1,13 @@
+celery==5.3.1
 dj-database-url==2.0.0
 Django==4.2.4
+django-celery-beat==2.5.0
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
+flower==2.0.0
+PyAMQP==0.1.0.7
 psycopg2-binary==2.9.6
 python-decouple==3.8
 pytz==2023.3
+redis==4.6.0
 requests==2.31

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import User, Currency, Country, Stock
+from .models import User, Currency, Country, Stock, StockTimeSeries
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -57,4 +57,20 @@ class StockSerializer(serializers.ModelSerializer):
             "type",
             "currency",
             "country",
+        ]
+
+
+class StockTimeSeriesSerializer(serializers.ModelSerializer):
+    datetime = serializers.DateField(source="recorded_date")
+
+    class Meta:
+        model = StockTimeSeries
+        fields = [
+            "stock",
+            "datetime",
+            "open",
+            "close",
+            "high",
+            "low",
+            "volume",
         ]

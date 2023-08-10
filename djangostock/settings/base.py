@@ -27,6 +27,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("SECRET_KEY", default="django-insecure$djangostock.settings.local")
 
+API_KEY_TWELVEDATA = config("API_KEY_TWELVEDATA")
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", default=True, cast=bool)
 
@@ -46,6 +48,8 @@ INSTALLED_APPS = [
     "djangostock.application.application.ApplicationConfig",
     "rest_framework",
     "rest_framework_simplejwt",
+    "celery",
+    "django_celery_beat",
 ]
 
 # Default primary key field type
@@ -146,6 +150,14 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# ==============================================================================
+# CELERY SETTINGS
+# ==============================================================================
+CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default="redis://127.0.0.1:6379")
+CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="pyamqp://127.0.0.1:5672")
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
 
 # ==============================================================================
 # I18N AND L10N SETTINGS
