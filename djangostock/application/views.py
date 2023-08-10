@@ -103,3 +103,10 @@ class StockPrices(ListAPIView):
 
         serializer = self.get_serializer(stocks_ordered_by_latest_volume, many=True)
         return Response(serializer.data)
+
+
+class StockFollow(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        pass
