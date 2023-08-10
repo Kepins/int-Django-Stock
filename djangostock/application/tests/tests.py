@@ -310,8 +310,9 @@ class UserDetailForbiddenTest(TestCase):
         self.assertEquals(resp.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class TaskUpdateTimeSeriesValid(TestCase):
+class TaskUpdateTimeSeriesValidTest(TestCase):
     def setUp(self):
+        setup_test_environment()
         self.stock = StockFactory()
         self.stock.save()
         self.response_mock = mock.Mock()
@@ -446,3 +447,106 @@ class TaskUpdateTimeSeriesValid(TestCase):
         self.assertAlmostEquals(sts_08_07.high, 2.65)
         self.assertEquals(sts_08_07.volume, 18500)
         self.assertEquals(stock_time_series[0], sts)
+
+
+class StockPricesTest(TestCase):
+    def setUp(self):
+        setup_test_environment()
+        self.admin = UserFactory(is_admin=True)
+        self.admin.set_password("adminpasswd")
+        self.admin.save()
+        self.bearer_header = {"Authorization": f"Bearer {AccessToken.for_user(self.admin)}"}
+
+    def test(self):
+        # stock1
+        stock1 = StockFactory()
+        stock1.last_update_date = datetime.date(year=2023, month=8, day=8)
+        stock1.save()
+
+        timeseries1_1 = StockTimeSeriesFactory()
+        timeseries1_1.volume = 999
+        timeseries1_1.recorded_date = datetime.date(year=2023, month=8, day=7)
+        timeseries1_1.stock = stock1
+        timeseries1_1.save()
+
+        timeseries1_2 = StockTimeSeriesFactory()
+        timeseries1_2.volume = 80
+        timeseries1_2.recorded_date = datetime.date(year=2023, month=8, day=8)
+        timeseries1_2.stock = stock1
+        timeseries1_2.save()
+
+        # stock2
+        stock2 = StockFactory()
+        stock2.last_update_date = None
+        stock2.save()
+
+        # stock3
+        stock3 = StockFactory()
+        stock3.last_update_date = datetime.date(year=2023, month=8, day=7)
+        stock3.save()
+
+        timeseries3_1 = StockTimeSeriesFactory()
+        timeseries3_1.volume = 80
+        timeseries3_1.recorded_date = datetime.date(year=2023, month=8, day=6)
+        timeseries3_1.stock = stock3
+        timeseries3_1.save()
+
+        timeseries3_2 = StockTimeSeriesFactory()
+        timeseries3_2.volume = 100
+        timeseries3_2.recorded_date = datetime.date(year=2023, month=8, day=7)
+        timeseries3_2.stock = stock3
+        timeseries3_2.save()
+
+        resp = self.client.get(
+            "/stock/prices/",
+            headers=self.bearer_header,
+        )
+
+        self.assertEquals(resp.status_code, status.HTTP_200_OK)
+        self.assertEquals(len(resp.data["results"]), 2)
+        self.assertEquals(resp.data["results"][0]["latest_data"]["volume"], 100)
+        self.assertEquals(resp.data["results"][1]["latest_data"]["volume"], 80)
+
+    def test_unauthorized(self):
+        resp = self.client.get(
+            "/stock/prices/",
+        )
+        self.assertEquals(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_pagination(self):
+        for i in range(47):
+            stock = StockFactory()
+            stock.last_update_date = datetime.date(year=2023, month=8, day=8)
+            stock.save()
+            timeseries = StockTimeSeriesFactory()
+            timeseries.stock = stock
+            timeseries.recorded_date = datetime.date(year=2023, month=8, day=8)
+            timeseries.save()
+
+        resp = self.client.get(
+            "/stock/prices/",
+            headers=self.bearer_header,
+        )
+        self.assertEquals(resp.status_code, status.HTTP_200_OK)
+        self.assertEquals(len(resp.data["results"]), 20)
+
+        resp = self.client.get(
+            "/stock/prices/?page=1",
+            headers=self.bearer_header,
+        )
+        self.assertEquals(resp.status_code, status.HTTP_200_OK)
+        self.assertEquals(len(resp.data["results"]), 20)
+
+        resp = self.client.get(
+            "/stock/prices/?page=2",
+            headers=self.bearer_header,
+        )
+        self.assertEquals(resp.status_code, status.HTTP_200_OK)
+        self.assertEquals(len(resp.data["results"]), 20)
+
+        resp = self.client.get(
+            "/stock/prices/?page=3",
+            headers=self.bearer_header,
+        )
+        self.assertEquals(resp.status_code, status.HTTP_200_OK)
+        self.assertEquals(len(resp.data["results"]), 7)

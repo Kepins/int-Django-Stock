@@ -8,6 +8,7 @@ from djangostock.application.models import User, Stock, Currency, Country, Stock
 
 def setup_test_environment():
     factory.random.reseed_random("my_seed")
+    StockFactory.reset_sequence()
 
 
 class UserFactory(factory.Factory):
