@@ -1,6 +1,7 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
-from .models import User, Currency, Country, Stock, StockTimeSeries
+from .models import User, Currency, Country, Stock, StockTimeSeries, Follow
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -77,3 +78,9 @@ class StockSerializer(serializers.ModelSerializer):
             "country",
             "latest_data",
         ]
+
+
+class FollowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Follow
+        fields = "__all__"

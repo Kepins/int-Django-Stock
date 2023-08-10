@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 
 from .auth import UnauthenticatedPost, IsHimself, IsAdmin
 from .models import User, Stock, StockTimeSeries
-from .serializers import UserSerializer, StockSerializer
+from .serializers import UserSerializer, StockSerializer, FollowSerializer
 
 
 class UserList(APIView):
@@ -109,4 +109,10 @@ class StockFollow(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
-        pass
+        data = request.data
+        data["user"] = request.user.pk
+        serializer = FollowSerializer(data=data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

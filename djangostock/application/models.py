@@ -74,3 +74,11 @@ class StockTimeSeries(models.Model):
     low = models.fields.FloatField()
     volume = models.fields.IntegerField()
     recorded_date = models.DateField()
+
+
+class Follow(models.Model):
+    user = models.ForeignKey(User, related_name="follows", on_delete=models.CASCADE)
+    stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ["user", "stock"]
