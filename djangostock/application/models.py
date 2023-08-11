@@ -61,6 +61,8 @@ class Stock(models.Model):
     currency = models.ForeignKey(Currency, on_delete=models.PROTECT)
     country = models.ForeignKey(Country, on_delete=models.PROTECT)
 
+    followers = models.ManyToManyField(User, related_name="follows", through="Follow")
+
     @property
     def latest_time_series(self):
         return self.series.latest("recorded_date")
@@ -77,7 +79,7 @@ class StockTimeSeries(models.Model):
 
 
 class Follow(models.Model):
-    user = models.ForeignKey(User, related_name="follows", on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
 
     class Meta:

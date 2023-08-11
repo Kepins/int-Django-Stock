@@ -117,7 +117,6 @@ class StockFollow(APIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-
     def delete(self, request, format=None):
         try:
             follow = Follow.objects.get(user=request.user, stock_id=request.data["stock"])
