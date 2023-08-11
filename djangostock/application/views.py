@@ -1,5 +1,7 @@
 from django.db.models import OuterRef, Subquery, Max
 from django.http import Http404
+from django.shortcuts import render
+from django.views import View
 from rest_framework import status
 from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.pagination import PageNumberPagination
@@ -124,3 +126,14 @@ class StockFollow(APIView):
             return Response({"error": "Not following."}, status=status.HTTP_404_NOT_FOUND)
         follow.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class Home(APIView):
+    """This view would need some proper js that adds header with Bearer token"""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        context = {"stocks": request.user.follows.all()}
+
+        return render(request, "home.html", context)
