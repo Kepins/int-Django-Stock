@@ -1,13 +1,15 @@
+from django.db.models import OuterRef, Subquery, Max
 from django.http import Http404
 from rest_framework import status
-from rest_framework.generics import get_object_or_404
+from rest_framework.generics import get_object_or_404, ListAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .auth import UnauthenticatedPost, IsHimself, IsAdmin
-from .models import User
-from .serializers import UserSerializer
+from .models import User, Stock, StockTimeSeries
+from .serializers import UserSerializer, StockSerializer
 
 
 class UserList(APIView):
@@ -63,3 +65,41 @@ class UserDetail(APIView):
         user = self.get_object(request, pk)
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class StockPricePagination(PageNumberPagination):
+    page_size = 20
+
+
+class StockPrices(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Stock.objects.filter(last_update_date__isnull=False)
+    serializer_class = StockSerializer
+    pagination_class = StockPricePagination
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        latest_volume_subquery = (
+            StockTimeSeries.objects.filter(stock=OuterRef("pk")).order_by("-recorded_date").values("volume")[:1]
+        )
+
+        # TODO THIS SHOULD ALSO WORK
+        # latest_volume_subquery = (
+        #     StockTimeSeries.objects.filter(stock=OuterRef("pk"))
+        #     .get(recorded_date="stock__last_update_date")
+        #     .values("volume")[:1]
+        # )
+
+        # Query to retrieve stocks along with the latest volume and order by volume
+        stocks_ordered_by_latest_volume = queryset.annotate(latest_volume=Subquery(latest_volume_subquery)).order_by(
+            "-latest_volume"
+        )
+
+        page = self.paginate_queryset(stocks_ordered_by_latest_volume)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(stocks_ordered_by_latest_volume, many=True)
+        return Response(serializer.data)
