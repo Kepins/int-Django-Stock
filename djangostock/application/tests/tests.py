@@ -9,7 +9,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from .factories import UserFactory, setup_test_environment, StockFactory, StockTimeSeriesFactory
 
-from ..models import User, Stock, StockTimeSeries
+from ..models import User, Stock, StockTimeSeries, Follow
 from ..tasks import update_time_series
 
 
@@ -550,3 +550,106 @@ class StockPricesTest(TestCase):
         )
         self.assertEquals(resp.status_code, status.HTTP_200_OK)
         self.assertEquals(len(resp.data["results"]), 7)
+
+
+class FollowTest(TestCase):
+    def setUp(self):
+        setup_test_environment()
+        self.user = UserFactory(is_admin=True)
+        self.user.set_password("adminpasswd")
+        self.user.save()
+        self.bearer_header = {"Authorization": f"Bearer {AccessToken.for_user(self.user)}"}
+
+    def test_follow_stock_exists_not_following(self):
+        stock = StockFactory()
+        stock.save()
+
+        resp = self.client.post(
+            f"/stock/follow/",
+            json.dumps(
+                {
+                    "stock": stock.pk,
+                }
+            ),
+            content_type="application/json",
+            headers=self.bearer_header,
+        )
+
+        self.assertEquals(resp.status_code, status.HTTP_201_CREATED)
+        self.assertIsNotNone(Follow.objects.get(user=self.user, stock=stock))
+
+    def test_follow_stock_exists_already_following(self):
+        stock = StockFactory()
+        stock.save()
+
+        self.user.follows.add(stock)
+        self.user.save()
+
+        resp = self.client.post(
+            f"/stock/follow/",
+            json.dumps(
+                {
+                    "stock": stock.pk,
+                }
+            ),
+            content_type="application/json",
+            headers=self.bearer_header,
+        )
+
+        self.assertEquals(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIsNotNone(Follow.objects.get(user=self.user, stock=stock))
+
+    def test_follow_stock_not_exists(self):
+        resp = self.client.post(
+            f"/stock/follow/",
+            json.dumps(
+                {
+                    "stock": 1,
+                }
+            ),
+            content_type="application/json",
+            headers=self.bearer_header,
+        )
+
+        self.assertEquals(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_unfollow_exists(self):
+        stock = StockFactory()
+        stock.save()
+
+        self.user.follows.add(stock)
+        self.user.save()
+
+        resp = self.client.delete(
+            f"/stock/follow/",
+            json.dumps(
+                {
+                    "stock": stock.pk,
+                }
+            ),
+            content_type="application/json",
+            headers=self.bearer_header,
+        )
+
+        self.assertEquals(resp.status_code, status.HTTP_204_NO_CONTENT)
+        with self.assertRaises(Follow.DoesNotExist):
+            Follow.objects.get(user=self.user, stock=stock)
+
+    def test_unfollow_doesnt_exist(self):
+        stock = StockFactory()
+        stock.save()
+
+        resp = self.client.delete(
+            f"/stock/follow/",
+            json.dumps(
+                {
+                    "stock": stock.pk,
+                }
+            ),
+            content_type="application/json",
+            headers=self.bearer_header,
+        )
+
+        self.assertEquals(resp.status_code, status.HTTP_404_NOT_FOUND)
+        with self.assertRaises(Follow.DoesNotExist):
+            Follow.objects.get(user=self.user, stock=stock)
