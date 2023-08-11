@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .auth import UnauthenticatedPost, IsHimself, IsAdmin
-from .models import User, Stock, StockTimeSeries
+from .models import User, Stock, StockTimeSeries, Follow
 from .serializers import UserSerializer, StockSerializer, FollowSerializer
 
 
@@ -116,3 +116,12 @@ class StockFollow(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+    def delete(self, request, format=None):
+        try:
+            follow = Follow.objects.get(user=request.user, stock_id=request.data["stock"])
+        except Follow.DoesNotExist as e:
+            return Response({"error": "Not following."}, status=status.HTTP_404_NOT_FOUND)
+        follow.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
