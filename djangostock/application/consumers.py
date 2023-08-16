@@ -5,8 +5,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 class HomeConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # TODO distinguish between users
-        user_id = 1
+        user_id = self.scope["cookies"].get("ws_token")
 
         self.group_name = f"user_{user_id}"  # Set the group name
 
