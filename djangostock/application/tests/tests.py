@@ -766,3 +766,17 @@ class RequestTest(TestCase):
             headers=self.bearer_header,
         )
         self.assertEquals(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_unauthorized(self):
+        stock = StockFactory.build()
+
+        resp = self.client.post(
+            f"/stock/request/",
+            json.dumps(
+                {
+                    "symbol": stock.symbol,
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEquals(resp.status_code, status.HTTP_401_UNAUTHORIZED)

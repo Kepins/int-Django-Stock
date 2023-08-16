@@ -130,6 +130,8 @@ class StockFollow(APIView):
 
 
 class StockRequest(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         serializer = StockRequestSerializer(data=request.data)
         if not serializer.is_valid():
