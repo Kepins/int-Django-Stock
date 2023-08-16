@@ -1,12 +1,14 @@
 import datetime
 
 import requests
+from asgiref.sync import async_to_sync
 from celery import shared_task
+from channels.layers import get_channel_layer
 from django.conf import settings
 
 from djangostock.application.models import Stock
 
-from djangostock.application.serializers import StockTimeSeriesSerializer
+from djangostock.application.serializers import StockTimeSeriesSerializer, StockSerializer
 
 
 @shared_task(ignore_result=True)
@@ -17,40 +19,49 @@ def update_time_series(symbol):
         "interval": "1day",
     }
 
-    while True:
-        r = requests.get(
-            "https://api.twelvedata.com/time_series",
-            params=query_params,
-        )
-        if r.status_code == 200 and r.json()["status"] == "ok":
-            stock = Stock.objects.get(symbol=symbol)
-            if not stock.last_update_date:
-                stock.last_update_date = r.json()["values"][0]["datetime"]
-                for value in r.json()["values"]:
-                    data = value
-                    data["stock"] = stock.pk
-                    serializer = StockTimeSeriesSerializer(data=data)
-                    if serializer.is_valid():
-                        serializer.save()
-                stock.save()
-            else:
-                values = [
-                    v
-                    for v in r.json()["values"]
-                    if datetime.datetime.strptime(v["datetime"], "%Y-%m-%d").date() > stock.last_update_date
-                ]
-                for value in values:
-                    data = value
-                    data["stock"] = stock.pk
-                    serializer = StockTimeSeriesSerializer(data=data)
-                    if serializer.is_valid():
-                        serializer.save()
-                if values:
-                    stock.last_update_date = values[0]["datetime"]
-                    stock.save()
-            break
+    r = requests.get(
+        "https://api.twelvedata.com/time_series",
+        params=query_params,
+    )
+    if r.status_code == 200 and r.json()["status"] == "ok":
+        updated = False
+        stock = Stock.objects.get(symbol=symbol)
+        if not stock.last_update_date:
+            stock.last_update_date = r.json()["values"][0]["datetime"]
+            for value in r.json()["values"]:
+                data = value
+                data["stock"] = stock.pk
+                serializer = StockTimeSeriesSerializer(data=data)
+                if serializer.is_valid():
+                    serializer.save()
+            stock.save()
+            updated = True
         else:
-            break
+            values = [
+                v
+                for v in r.json()["values"]
+                if datetime.datetime.strptime(v["datetime"], "%Y-%m-%d").date() > stock.last_update_date
+            ]
+            for value in values:
+                data = value
+                data["stock"] = stock.pk
+                serializer = StockTimeSeriesSerializer(data=data)
+                if serializer.is_valid():
+                    serializer.save()
+            if values:
+                stock.last_update_date = values[0]["datetime"]
+                stock.save()
+                updated = True
+        if updated:
+            channel_layer = get_channel_layer()
+            for follower in stock.followers.all():
+                async_to_sync(channel_layer.group_send)(
+                    f"user_{follower.id}",
+                    {
+                        "type": "send.stock.update",  # This is the custom consumer type you define
+                        "message": StockSerializer(stock).data,
+                    },
+                )
 
 
 @shared_task
