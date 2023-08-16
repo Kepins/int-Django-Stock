@@ -723,6 +723,7 @@ class RequestTest(TestCase):
         self.assertEquals(resp.status_code, status.HTTP_201_CREATED)
         stock = Stock.objects.get(symbol=stock.symbol)
         self.assertEquals(stock.latest_time_series.recorded_date, datetime.date(year=2023, month=8, day=8))
+        self.assertEquals(stock, self.user.follows.get(symbol=stock.symbol))
 
     @mock.patch("requests.get")
     def test_stock_not_available_in_api(self, mock_get):

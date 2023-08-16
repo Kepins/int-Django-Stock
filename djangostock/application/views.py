@@ -156,6 +156,10 @@ class StockRequest(APIView):
         if serializer.is_valid():
             serializer.save()
 
+        follow = FollowSerializer(data={"user": request.user.pk, "stock": Stock.objects.get(symbol=symbol).pk})
+        follow.is_valid(raise_exception=True)
+        follow.save()
+
         update_time_series.delay(symbol=symbol)
 
         return Response(
