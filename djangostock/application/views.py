@@ -1,7 +1,7 @@
+import requests
 from django.db.models import OuterRef, Subquery, Max
 from django.http import Http404
 from django.shortcuts import render
-from django.views import View
 from rest_framework import status
 from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.pagination import PageNumberPagination
@@ -11,7 +11,8 @@ from rest_framework.views import APIView
 
 from .auth import UnauthenticatedPost, IsHimself, IsAdmin
 from .models import User, Stock, StockTimeSeries, Follow
-from .serializers import UserSerializer, StockSerializer, FollowSerializer
+from .serializers import UserSerializer, StockSerializer, FollowSerializer, StockRequestSerializer
+from .tasks import update_time_series
 
 
 class UserList(APIView):
@@ -126,6 +127,41 @@ class StockFollow(APIView):
             return Response({"error": "Not following."}, status=status.HTTP_404_NOT_FOUND)
         follow.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class StockRequest(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = StockRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        symbol = serializer.data["symbol"]
+        query_params = {
+            "currency": "USD",
+            "country": "United States",
+            "exchange": "NASDAQ",
+            "type": "Common Stock",
+            "symbol": symbol,
+        }
+
+        r = requests.get(
+            "https://api.twelvedata.com/stocks",
+            params=query_params,
+        )
+        if not r.json()["data"]:
+            return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = StockSerializer(data=r.json()["data"][0])
+        if serializer.is_valid():
+            serializer.save()
+
+        update_time_series.delay(symbol=symbol)
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class Home(APIView):

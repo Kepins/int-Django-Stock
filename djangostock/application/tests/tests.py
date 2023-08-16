@@ -653,3 +653,130 @@ class FollowTest(TestCase):
         self.assertEquals(resp.status_code, status.HTTP_404_NOT_FOUND)
         with self.assertRaises(Follow.DoesNotExist):
             Follow.objects.get(user=self.user, stock=stock)
+
+
+class RequestTest(TestCase):
+    def setUp(self):
+        setup_test_environment()
+        self.user = UserFactory(is_admin=True)
+        self.user.set_password("adminpasswd")
+        self.user.save()
+        self.bearer_header = {"Authorization": f"Bearer {AccessToken.for_user(self.user)}"}
+
+    @mock.patch("requests.get")
+    def test_stock_available_in_api(self, mock_get):
+        stock = StockFactory.build()
+
+        stocks_response_mock = mock.Mock()
+        stocks_response_mock.status_code = 200
+        stocks_response_mock.json = lambda: {
+            "data": [
+                {
+                    "symbol": stock.symbol,
+                    "name": stock.name,
+                    "currency": stock.currency.name,
+                    "exchange": stock.exchange_name,
+                    "mic_code": "XNCM",
+                    "country": stock.country.name,
+                    "type": stock.type_of_stock,
+                }
+            ],
+            "status": "ok",
+        }
+        stocktimeseries_response_mock = mock.Mock()
+        stocktimeseries_response_mock.status_code = 200
+        stocktimeseries_response_mock.json = lambda: {
+            "meta": {
+                "symbol": stock.symbol,
+                "interval": "1day",
+                "currency": stock.currency,
+                "exchange_timezone": "America/New_York",
+                "exchange": stock.exchange_name,
+                "mic_code": "XNCM",
+                "type": stock.type_of_stock,
+            },
+            "values": [
+                {
+                    "datetime": "2023-08-08",
+                    "open": "2.36000",
+                    "high": "2.42000",
+                    "low": "2.18000",
+                    "close": "2.18000",
+                    "volume": "6200",
+                }
+            ],
+            "status": "ok",
+        }
+        mock_get.side_effect = [stocks_response_mock, stocktimeseries_response_mock]
+
+        resp = self.client.post(
+            f"/stock/request/",
+            json.dumps(
+                {
+                    "symbol": stock.symbol,
+                }
+            ),
+            content_type="application/json",
+            headers=self.bearer_header,
+        )
+
+        self.assertEquals(resp.status_code, status.HTTP_201_CREATED)
+        stock = Stock.objects.get(symbol=stock.symbol)
+        self.assertEquals(stock.latest_time_series.recorded_date, datetime.date(year=2023, month=8, day=8))
+
+    @mock.patch("requests.get")
+    def test_stock_not_available_in_api(self, mock_get):
+        stock = StockFactory.build()
+
+        stocks_response_mock = mock.Mock()
+        stocks_response_mock.status_code = 200
+        stocks_response_mock.json = lambda: {
+            "data": [],
+            "status": "ok",
+        }
+        mock_get.side_effect = [stocks_response_mock]
+
+        resp = self.client.post(
+            f"/stock/request/",
+            json.dumps(
+                {
+                    "symbol": stock.symbol,
+                }
+            ),
+            content_type="application/json",
+            headers=self.bearer_header,
+        )
+
+        self.assertEquals(resp.status_code, status.HTTP_404_NOT_FOUND)
+        with self.assertRaises(Stock.DoesNotExist):
+            Stock.objects.get(symbol=stock.symbol)
+
+    def test_stock_already_in_db(self):
+        stock = StockFactory()
+        stock.save()
+
+        resp = self.client.post(
+            f"/stock/request/",
+            json.dumps(
+                {
+                    "symbol": stock.symbol,
+                }
+            ),
+            content_type="application/json",
+            headers=self.bearer_header,
+        )
+        self.assertEquals(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_unauthorized(self):
+        stock = StockFactory.build()
+
+        resp = self.client.post(
+            f"/stock/request/",
+            json.dumps(
+                {
+                    "symbol": stock.symbol,
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEquals(resp.status_code, status.HTTP_401_UNAUTHORIZED)

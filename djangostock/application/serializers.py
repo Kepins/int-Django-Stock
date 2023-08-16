@@ -80,6 +80,12 @@ class StockSerializer(serializers.ModelSerializer):
         ]
 
 
+class StockRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Stock
+        fields = ["symbol"]
+
+
 class FollowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Follow
