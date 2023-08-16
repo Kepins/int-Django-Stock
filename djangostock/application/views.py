@@ -175,6 +175,5 @@ class Home(APIView):
 
     def get(self, request):
         context = {"stocks": request.user.follows.all()}
-        response = render(request, "home.html", context)
-        response.set_cookie("ws_token", request.user.pk)
-        return response
+        request.session["ws_user"] = request.user.id
+        return render(request, "home.html", context)

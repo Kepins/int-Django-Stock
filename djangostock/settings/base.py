@@ -130,6 +130,10 @@ CHANNEL_LAYERS = {
         # "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }
+# ==============================================================================
+# SESSION SETTINGS
+# ==============================================================================
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
 # ==============================================================================
 # DATABASES SETTINGS
