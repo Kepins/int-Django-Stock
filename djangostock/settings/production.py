@@ -1,7 +1,7 @@
 # flake8: noqa
 
-import sentry_sdk
-from sentry_sdk.integrations.django import DjangoIntegration
+# import sentry_sdk
+# from sentry_sdk.integrations.django import DjangoIntegration
 
 import djangostock
 from .base import *
@@ -27,9 +27,9 @@ SESSION_COOKIE_SECURE = True
 # THIRD-PARTY APPS SETTINGS
 # ==============================================================================
 
-sentry_sdk.init(
-    dsn=config("SENTRY_DSN", default=""),
-    environment=DJANGOSTOCK_ENVIRONMENT,
-    release="djangostock@%s" % djangostock.__version__,
-    integrations=[DjangoIntegration()],
-)
+# sentry_sdk.init(
+#     dsn=config("SENTRY_DSN", default=""),
+#     environment=DJANGOSTOCK_ENVIRONMENT,
+#     release="djangostock@%s" % djangostock.__version__,
+#     integrations=[DjangoIntegration()],
+# )
