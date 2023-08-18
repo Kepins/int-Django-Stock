@@ -10,10 +10,10 @@ ENV DJANGO_SETTINGS_MODULE djangostock.settings.local
 WORKDIR /djangostock/app
 
 # Copy startup script
-COPY docker-start/script.sh /docker-start/script.sh
+COPY docker-start /docker-start
 
 # Make startup script runnable
-RUN ["chmod", "+x", "/docker-start/script.sh"]
+RUN find /docker-start -type f -exec chmod +x {} \;
 
 # Copy the requirements file into the container at /djangostock/requirements
 COPY requirements requirements
@@ -23,9 +23,3 @@ RUN pip install -r requirements/local.txt
 
 # Copy the current directory contents into the container at /djangostock
 COPY . /djangostock/app
-
-# Expose port 8000 (Daphne)
-EXPOSE 8000
-
-# Run startup script
-ENTRYPOINT ["/docker-start/script.sh"]

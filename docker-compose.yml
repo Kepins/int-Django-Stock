@@ -1,4 +1,4 @@
-version: '3'
+version: '3.9'
 
 services:
   djangostock:
@@ -11,18 +11,61 @@ services:
       - "8000:8000"
     env_file:
       - .env
-    environment:
-      - DATABASE_URL=postgres://stock_dev_admin:stock_dev_admin@postgres:5432/stock_dev
-      - CHANNELLAYER_HOST=redis
-      - CHANNELLAYER_PORT=6379
-      - CELERY_RESULT_BACKEND=redis://redis:6379
-      - CELERY_BROKER_URL=pyamqp://rabbitmq:5672
+      - .env.docker
+    command: ["/docker-start/script.sh"]
     depends_on:
       postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_started
       redis:
+        condition: service_started
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: "djangostock_celery_worker"
+    volumes:
+      - .:/djangostock/app
+    env_file:
+      - .env
+      - .env.docker
+    command: ["/docker-start/celery_worker.sh"]
+    depends_on:
+      djangostock:
+        condition: service_started
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: "djangostock_celery_beat"
+    volumes:
+      - .:/djangostock/app
+    env_file:
+      - .env
+      - .env.docker
+    command: ["/docker-start/celery_beat.sh"]
+    depends_on:
+      djangostock:
+        condition: service_started
+
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: "djangostock_flower"
+    ports:
+      - "5555:5555"
+    volumes:
+      - .:/djangostock/app
+    env_file:
+      - .env
+      - .env.docker
+    command: ["/docker-start/celery_flower.sh"]
+    depends_on:
+      djangostock:
         condition: service_started
 
   postgres:
