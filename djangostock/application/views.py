@@ -156,6 +156,10 @@ class StockRequest(APIView):
         if serializer.is_valid():
             serializer.save()
 
+        follow = FollowSerializer(data={"user": request.user.pk, "stock": Stock.objects.get(symbol=symbol).pk})
+        follow.is_valid(raise_exception=True)
+        follow.save()
+
         update_time_series.delay(symbol=symbol)
 
         return Response(
@@ -171,5 +175,5 @@ class Home(APIView):
 
     def get(self, request):
         context = {"stocks": request.user.follows.all()}
-
+        request.session["ws_user"] = request.user.id
         return render(request, "home.html", context)

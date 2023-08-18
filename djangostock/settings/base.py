@@ -39,6 +39,7 @@ AUTH_USER_MODEL = "application.User"
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -61,7 +62,8 @@ ROOT_URLCONF = "djangostock.urls"
 
 INTERNAL_IPS = ["127.0.0.1"]
 
-WSGI_APPLICATION = "djangostock.wsgi.application"
+# WSGI_APPLICATION = "djangostock.wsgi.application"
+ASGI_APPLICATION = "djangostock.asgi.application"
 
 # ==============================================================================
 # MIDDLEWARE SETTINGS
@@ -115,6 +117,23 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "SIGNING_KEY": SECRET_KEY,
 }
+
+# ==============================================================================
+# CHANNEL SETTINGS
+# ==============================================================================
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("localhost", 6379)],
+        },
+        # "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
+# ==============================================================================
+# SESSION SETTINGS
+# ==============================================================================
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
 # ==============================================================================
 # DATABASES SETTINGS

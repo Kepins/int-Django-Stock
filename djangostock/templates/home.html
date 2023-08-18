@@ -36,24 +36,96 @@
             background-color: #e0e0e0;
         }
     </style>
+    <script>
+        const socket = new WebSocket(
+            'ws://'
+            + window.location.host
+            + '/ws/home/'
+        );
+
+        socket.onopen = function(e) {
+          console.log("[open] Connection established");
+        };
+
+        socket.onmessage = function(event) {
+          const receivedData = event.data;
+          console.log(`[message] Data received from server: ${event.data}`);
+
+          // Process the received data here
+          // For example, you can parse the JSON data if applicable
+          try {
+              const jsonData = JSON.parse(receivedData);
+              console.log("Parsed JSON data:", jsonData);
+              if (jsonData.type === "send.stock.update"){
+                // Select the table body (tbody) element
+                const tableBody = document.querySelector("tbody");
+
+                // Create a new row (tr) element
+                const newRow = document.createElement("tr");
+
+                // Create cells (td) for the new row
+                const nameCell = document.createElement("td");
+                nameCell.textContent = jsonData.message.name;
+
+                const symbolCell = document.createElement("td");
+                symbolCell.textContent = jsonData.message.symbol;
+
+                const priceCell = document.createElement("td");
+                priceCell.textContent = jsonData.message.latest_data.close;
+
+                const currencyCell = document.createElement("td");
+                currencyCell.textContent = jsonData.message.currency;
+
+                // Append cells to the new row
+                newRow.appendChild(nameCell);
+                newRow.appendChild(symbolCell);
+                newRow.appendChild(priceCell);
+                newRow.appendChild(currencyCell);
+
+                // Append the new row to the table body
+                tableBody.appendChild(newRow);
+              }
+          } catch (error) {
+              console.error("Error parsing JSON:", error);
+          }
+        };
+
+        socket.onclose = function(event) {
+          if (event.wasClean) {
+            console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+          } else {
+            // e.g. server process killed or network down
+            // event.code is usually 1006 in this case
+            console.log('[close] Connection died');
+          }
+        };
+        socket.onerror = function(error) {
+          console.log(`[error]`);
+        };
+    </script>
+
 </head>
 <body>
     <main>
         <table>
-            <tr>
-                <th>Name</th>
-                <th>Symbol</th>
-                <th>Price</th>
-                <th>Currency</th>
-            </tr>
-            {% for stock in stocks %}
-                <tr>
-                    <td>{{ stock.name }}</td>
-                    <td>{{ stock.symbol }}</td>
-                    <td>{{ stock.latest_time_series.close |floatformat:2 }}</td>
-                    <td>{{ stock.currency.name }}</td>
-                </tr>
-            {% endfor %}
+            <thead>
+              <tr>
+                  <th>Name</th>
+                  <th>Symbol</th>
+                  <th>Price</th>
+                  <th>Currency</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for stock in stocks %}
+                    <tr>
+                        <td>{{ stock.name }}</td>
+                        <td>{{ stock.symbol }}</td>
+                        <td>{{ stock.latest_time_series.close |floatformat:2 }}</td>
+                        <td>{{ stock.currency.name }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
         </table>
     </main>
 </body>
