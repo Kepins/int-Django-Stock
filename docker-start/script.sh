@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Run migrations
+python manage.py collectstatic --no-input
 python manage.py migrate
 python djangostock/application/scripts/40_stocks_twelvedata.py
 python djangostock/application/scripts/start_periodic_tasks.py

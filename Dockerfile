@@ -7,7 +7,7 @@ ENV PYTHONUNBUFFERED 1
 ENV DJANGO_SETTINGS_MODULE djangostock.settings.local
 
 # Set the working directory in the container
-WORKDIR /djangostock
+WORKDIR /djangostock/app
 
 # Copy startup script
 COPY docker-start/script.sh /docker-start/script.sh
@@ -22,7 +22,7 @@ COPY requirements requirements
 RUN pip install -r requirements/local.txt
 
 # Copy the current directory contents into the container at /djangostock
-COPY . /djangostock/
+COPY . /djangostock/app
 
 # Expose port 8000 (Daphne)
 EXPOSE 8000
