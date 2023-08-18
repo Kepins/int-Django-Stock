@@ -12,22 +12,23 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djangostock.settings.local")
 django.setup()
 
 from djangostock.application.serializers import StockSerializer
+from djangostock.application.models import Stock
 
-query_params = {
-    "currency": "USD",
-    "country": "United States",
-    "exchange": "NASDAQ",
-    "type": "Common Stock",
-}
+if not Stock.objects.exists():
+    query_params = {
+        "currency": "USD",
+        "country": "United States",
+        "exchange": "NASDAQ",
+        "type": "Common Stock",
+    }
 
+    r = requests.get(
+        "https://api.twelvedata.com/stocks",
+        params=query_params,
+    )
+    stocks = random.sample(r.json()["data"], 40)
 
-r = requests.get(
-    "https://api.twelvedata.com/stocks",
-    params=query_params,
-)
-stocks = random.sample(r.json()["data"], 40)
-
-for stock in stocks:
-    serializer = StockSerializer(data=stock)
-    if serializer.is_valid():
-        serializer.save()
+    for stock in stocks:
+        serializer = StockSerializer(data=stock)
+        if serializer.is_valid():
+            serializer.save()

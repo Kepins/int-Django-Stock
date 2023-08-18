@@ -13,9 +13,15 @@ services:
       - .env
     environment:
       - DATABASE_URL=postgres://stock_dev_admin:stock_dev_admin@postgres:5432/stock_dev
+      - CELERY_RESULT_BACKEND=redis://redis:6379
+      - CELERY_BROKER_URL=pyamqp://rabbitmq:5672
     depends_on:
       postgres:
-          condition: service_healthy
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      redis:
+        condition: service_started
 
   postgres:
     image: postgres:15
@@ -30,6 +36,12 @@ services:
       interval: 2s
       timeout: 5s
       retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.12
+
+  redis:
+    image: redis:7.2
 
 volumes:
   postgres_data:
