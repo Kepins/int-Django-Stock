@@ -1,5 +1,6 @@
 version: '3.9'
 
+name: djangostock_dev
 services:
   djangostock:
     build:
@@ -7,8 +8,8 @@ services:
       dockerfile: Dockerfile
     volumes:
       - .:/djangostock/app
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     env_file:
       - .env
       - .env.docker
@@ -92,6 +93,14 @@ services:
 
   redis:
     image: redis:7.2
+
+  nginx:
+    build: ./nginx
+    ports:
+      - "8000:80"
+    depends_on:
+      djangostock:
+        condition: service_healthy
 
 volumes:
   postgres_data:
