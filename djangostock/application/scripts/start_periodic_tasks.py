@@ -15,7 +15,7 @@ schedule, created = IntervalSchedule.objects.get_or_create(
     period=IntervalSchedule.HOURS,
 )
 
-if not PeriodicTask.objects.filter(name="Updating StockTimeSeries").exists:
+if not PeriodicTask.objects.filter(name="Updating StockTimeSeries").exists():
     PeriodicTask.objects.create(
         interval=schedule,  # we created this above.
         name="Updating StockTimeSeries",  # simply describes this periodic task.
