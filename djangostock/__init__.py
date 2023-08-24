@@ -9,3 +9,5 @@ __version__ = get_version(VERSION)
 from .celery import app as celery_app
 
 __all__ = ("celery_app",)
+
+from .middleware import HealthCheckMiddleware

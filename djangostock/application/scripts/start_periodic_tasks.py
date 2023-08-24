@@ -15,8 +15,9 @@ schedule, created = IntervalSchedule.objects.get_or_create(
     period=IntervalSchedule.HOURS,
 )
 
-PeriodicTask.objects.create(
-    interval=schedule,  # we created this above.
-    name="Updating StockTimeSeries",  # simply describes this periodic task.
-    task="djangostock.application.tasks.periodic_update_time_series",  # name of task.
-)
+if not PeriodicTask.objects.filter(name="Updating StockTimeSeries").exists():
+    PeriodicTask.objects.create(
+        interval=schedule,  # we created this above.
+        name="Updating StockTimeSeries",  # simply describes this periodic task.
+        task="djangostock.application.tasks.periodic_update_time_series",  # name of task.
+    )

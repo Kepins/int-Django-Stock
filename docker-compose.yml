@@ -1,0 +1,106 @@
+version: '3.9'
+
+name: djangostock_dev
+services:
+  djangostock:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/djangostock/app
+    expose:
+      - "8000"
+    env_file:
+      - .env
+      - .env.docker
+    command: ["/docker-start/script.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl http://127.0.0.1:8000/health/"]
+      interval: 3s
+      timeout: 15s
+      retries: 15
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: "djangostock_celery_worker"
+    volumes:
+      - .:/djangostock/app
+    env_file:
+      - .env
+      - .env.docker
+    command: ["/docker-start/celery_worker.sh"]
+    depends_on:
+      djangostock:
+        condition: service_healthy
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: "djangostock_celery_beat"
+    volumes:
+      - .:/djangostock/app
+    env_file:
+      - .env
+      - .env.docker
+    command: ["/docker-start/celery_beat.sh"]
+    depends_on:
+      djangostock:
+        condition: service_healthy
+
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: "djangostock_flower"
+    ports:
+      - "5555:5555"
+    volumes:
+      - .:/djangostock/app
+    env_file:
+      - .env
+      - .env.docker
+    command: ["/docker-start/celery_flower.sh"]
+    depends_on:
+      djangostock:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=stock_dev
+      - POSTGRES_USER=stock_dev_admin
+      - POSTGRES_PASSWORD=stock_dev_admin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d stock_dev -U stock_dev_admin"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.12
+
+  redis:
+    image: redis:7.2
+
+  nginx:
+    build: ./nginx
+    ports:
+      - "8000:80"
+    depends_on:
+      djangostock:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

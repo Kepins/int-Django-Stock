@@ -32,7 +32,7 @@ API_KEY_TWELVEDATA = config("API_KEY_TWELVEDATA")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", default=True, cast=bool)
 
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1,localhost", cast=Csv())
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1, localhost", cast=Csv())
 
 AUTH_USER_MODEL = "application.User"
 
@@ -70,6 +70,7 @@ ASGI_APPLICATION = "djangostock.asgi.application"
 # ==============================================================================
 
 MIDDLEWARE = [
+    "djangostock.HealthCheckMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -125,7 +126,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("localhost", 6379)],
+            "hosts": [(config("CHANNELLAYER_HOST", default="localhost"), config("CHANNELLAYER_PORT", 6379, cast=int))],
         },
         # "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
@@ -205,9 +206,9 @@ LOCALE_PATHS = [BASE_DIR / "locale"]
 
 STATIC_URL = "static/"
 
-STATIC_ROOT = BASE_DIR.parent.parent / "static"
+STATIC_ROOT = BASE_DIR.parent / "static"
 
-STATICFILES_DIRS = [BASE_DIR / "static"]
+STATICFILES_DIRS = [BASE_DIR / "djangostock/static"]
 
 STATICFILES_FINDERS = (
     "django.contrib.staticfiles.finders.FileSystemFinder",
@@ -220,7 +221,7 @@ STATICFILES_FINDERS = (
 
 MEDIA_URL = "/media/"
 
-MEDIA_ROOT = BASE_DIR.parent.parent / "media"
+MEDIA_ROOT = BASE_DIR.parent / "media"
 
 
 # ==============================================================================
